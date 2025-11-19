@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+cmake -B build && cmake --build build && (
+	trap 'kill 0' EXIT
+	build/server 3000 &
+	wait
+)
