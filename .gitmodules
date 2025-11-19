@@ -1,9 +1,9 @@
 [submodule "PocketDeck/qr-gen"]
-	path = qr-gen
+	path = PocketDeck/qr-gen
 	url = https://github.com/PocketDeck/qr-gen.git
 [submodule "PocketDeck/pd-core"]
-	path = pd-core
+	path = PocketDeck/pd-core
 	url = https://github.com/PocketDeck/pd-core.git
 [submodule "PocketDeck/pd-web"]
-	path = pd-web
+	path = PocketDeck/pd-web
 	url = https://github.com/PocketDeck/pd-web.git
