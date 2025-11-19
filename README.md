@@ -3,43 +3,49 @@
 `pd-infra` contains the deployment infrastructure for **PocketDeck**, an online platform for playing multiplayer card games.
 This repository provides a **single-container Docker-based deployment** that builds and serves all PocketDeck components behind an Nginx reverse proxy.
 
-The container automatically fetches and builds the following public PocketDeck repositories:
+All PocketDeck components are included as **Git submodules** and are built directly inside the container during the Docker build process. This repository does **not** perform any machine-level setup; it only provides the build and runtime environment for deployment.
 
-- **`qr-gen`** — Small utility service used by the frontend to generate join-room QR codes.
+---
+
+## Included Components (via Submodules)
+
+The following PocketDeck repositories are included under `PocketDeck/` as Git submodules:
+
+- **`qr-gen`** — QR code generation service used by the frontend to allow players to easily join rooms via shareable QR codes.
 - **`pd-core`** — Main backend server responsible for game logic, player sessions, and WebSocket communication.
-- **`pd-web`** — Web frontend served via a lightweight Python application.
+- **`pd-web`** — Web frontend served through a lightweight Python application.
 
-This repository does **not** perform any system configuration. It only builds these services inside a container and runs them using a unified startup process. Deployment, scaling, and hosting choices are left to the operator.
+Submodules ensure that deployment always uses specific, version-tracked revisions of each component.
 
 ---
 
 ## Features
 
 ### **Single-Container Deployment**
-All PocketDeck services run inside a single Docker container for simplified hosting:
+All PocketDeck services run inside one Docker container:
 
-- `qr-gen` built via `make`
-- `pd-core` built using CMake
-- `pd-web` launched as a Python app
-- Nginx handles external access and routes the correct paths to each internal service
+- `qr-gen` is built using `make`.
+- `pd-core` is built using CMake.
+- `pd-web` is launched as a Python application.
+- Nginx serves as the reverse proxy and entrypoint for all external traffic.
 
 ### **Reverse Proxy Routing**
-Nginx distributes incoming traffic:
+Nginx handles routing between all internal services:
 
-| Route        | Internal Service | Purpose |
-|--------------|------------------|---------|
-| `/qr`        | qr-gen           | QR code generation for joining rooms |
-| `/ws`        | pd-core          | Backend WebSocket/game server |
+| Route         | Internal Service | Purpose |
+|---------------|------------------|---------|
+| `/qr`         | qr-gen           | QR code generation for room invites |
+| `/ws`         | pd-core          | Backend WebSocket/game logic |
 | `/` (default) | pd-web           | Frontend application |
 
 ### **Automated Build Process**
 The Dockerfile included in this repository:
 
-- Pulls PocketDeck components from GitHub over HTTPS
-- Installs required build tools (CMake, Make, compilers, Python, Nginx)
-- Builds each service
+- Copies the repository and its submodules into the container
+- Installs required build dependencies (Make, CMake, Python, Nginx, etc.)
+- Builds each component
 - Configures Nginx
-- Launches all components via a unified `start.sh` script
+- Starts all services using a unified `start.sh` supervisor script
 
 ---
 
@@ -48,10 +54,37 @@ The Dockerfile included in this repository:
 ```
 pd-infra/
 │
-├── Dockerfile # Builds the full PocketDeck environment
-├── nginx.conf # Reverse proxy configuration (http-level include)
-├── start.sh   # Supervises and launches all services
-└── README.md  # This file
+├── PocketDeck/ # Submodule directory
+│   ├── qr-gen/ # Submodule: QR generator
+│   ├── pd-core/ # Submodule: Backend server
+│   └── pd-web/ # Submodule: Frontend
+│
+├── Dockerfile # Builds the entire PocketDeck environment
+├── nginx.conf # Reverse proxy configuration (http include)
+├── start.sh # Launches all services inside the container
+└── README.md # This file
+```
+
+---
+
+## Working with Submodules
+
+To clone this repository with all components included:
+
+```bash
+git clone --recurse-submodules https://github.com/PocketDeck/pd-infra.git
+```
+
+If the repository was already cloned without submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
+To update all submodules to their latest remote commits:
+
+```bash
+git submodule update --remote --merge
 ```
 
 ---
@@ -70,12 +103,12 @@ docker run -p 80:80 pocketdeck
 
 The PocketDeck system will be accessible on port 80, with all internal routing handled automatically by Nginx.
 
-No additional environment variables or configuration are required.
+No environment variables or additional configuration are required.
 
 ---
 
 ## Notes
-- This repository is intended **only for deployment**.
+- This repository is strictly for **deployment**; it does not provide development tools or local environment setup.
 It does not provide development tools, local testing helpers, or environment setup.
-- All PocketDeck components pulled during the build are public GitHub repositories, so no credentials are required.
-- Operators are responsible for choosing where and how the container is hosted (VPS, cloud service, etc.).
+- All PocketDeck components used as submodules are **public GitHub repositories**.
+- Hosting, scaling, SSL termination, and server management are fully up to the operator.

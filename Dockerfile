@@ -1,22 +1,18 @@
 FROM alpine:latest
 
 RUN apk add --no-cache \
-		git \
 		make \
 		cmake \
 		g++ \
 		python3 \
 		nginx
 
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY start.sh /app/start.sh
+
+COPY . /app
 
 WORKDIR /app
 RUN chmod +x start.sh && mkdir -p /run/nginx
-RUN \
-		git clone https://github.com/PocketDeck/qr-gen.git && \
-		git clone https://github.com/PocketDeck/pd-web.git && \
-		git clone https://github.com/PocketDeck/pd-core.git
+
 
 WORKDIR /app/qr-gen
 RUN make
