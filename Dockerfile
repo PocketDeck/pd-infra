@@ -5,14 +5,15 @@ RUN apk add --no-cache \
 		cmake \
 		g++ \
 		python3 \
-		nginx
+		nginx \
+		fcgi \
+		fcgiwrap
 
+RUN rc-service fcgiwrap start
 
-COPY . /app
-
-WORKDIR /app
-RUN chmod +x start.sh && mkdir -p /run/nginx
-
+COPY --chmod 744 qr-gen.sh /app/
+COPY --chmod 744 start.sh /app/
+RUN mkdir -p /run/nginx
 
 WORKDIR /app/qr-gen
 RUN make
