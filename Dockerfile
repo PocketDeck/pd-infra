@@ -1,25 +1,39 @@
+####### BUILDING ########
+FROM alpine:latest as builder
+
+RUN apk add --no-cache \
+		git \
+		go \
+		make
+
+WORKDIR /tmp
+
+ARG GIT_HOST
+
+# qr-gen
+RUN git clone --depth 1 "$GIT_HOST/qr-gen.git"
+RUN make -C qr-gen
+
+# pd-core
+RUN git clone --depth 1 "$GIT_HOST/pd-core3.git"
+RUN go build -C pd-core3 cmd/server/main.go
+
+####### RUNNING ########
 FROM alpine:latest
 
 RUN apk add --no-cache \
-		make \
-		cmake \
-		g++ \
 		python3 \
 		nginx \
 		fcgi \
 		fcgiwrap
 
-RUN rc-service fcgiwrap start
+WORKDIR /app
+COPY --from=builder /tmp/qr-gen/build/release/qr-gen qr-gen
+COPY --from=builder /tmp/pd-core3/main core
 
-COPY --chmod 744 qr-gen.sh /app/
-COPY --chmod 744 start.sh /app/
-RUN mkdir -p /run/nginx
-
-WORKDIR /app/qr-gen
-RUN make
-
-WORKDIR /app/pd-core
-RUN cmake -B build && cmake --build build
+COPY start.sh .
+COPY nginx.conf /etc/nginx/nginx.conf
+RUN chmod +x start.sh && mkdir -p /run/nginx
 
 EXPOSE 80
 

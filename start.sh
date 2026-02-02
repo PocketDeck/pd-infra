@@ -2,7 +2,7 @@
 set -e
 
 echo "Starting Core backend..."
-/app/pd-core/build/release/pd-core &
+/app/core &
 
 echo "Starting Web frontend..."
 /app/pd-web/serve &
