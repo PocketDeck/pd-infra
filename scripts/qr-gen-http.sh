@@ -1,6 +1,6 @@
 #!/bin/sh
 
-QR_BIN="/app/qr-gen/build/release/qr-gen"
+QR_BIN="/app/qr-gen"
 BODY=$(cat)
 OUTPUT="$("$QR_BIN" "$BODY" L)"
 
