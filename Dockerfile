@@ -30,10 +30,11 @@ RUN apk add --no-cache \
 WORKDIR /app
 COPY --from=builder /tmp/qr-gen/build/release/qr-gen qr-gen
 COPY --from=builder /tmp/pd-core3/main core
+COPY scripts .
+RUN chmod -R +x scripts
 
-COPY start.sh .
 COPY nginx.conf /etc/nginx/nginx.conf
-RUN chmod +x start.sh && mkdir -p /run/nginx
+RUN mkdir -p /run/nginx
 
 EXPOSE 80
 
