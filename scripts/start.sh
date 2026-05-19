@@ -9,7 +9,7 @@ reverse-proxy at http://localhost:8081/ | nginx -c pd-web/nginx.conf -p pd-web -
 
 RUNNING=$(
 	SUBPID=$(sh -c 'echo $PPID')
-	pgrep -fx "/bin/sh $0" | grep -vE "^($$|$SUBPID)$"
+	pgrep -fx "/bin/sh $0" | grep -vE "^($$|$SUBPID)$" || true
 )
 
 if [ -n "$RUNNING" ]; then
