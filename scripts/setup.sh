@@ -11,7 +11,7 @@ chmod +x pd-web/serve
 
 echo Install dependencies:
 sudo apt update
-sudo apt install "$DEPS" -y
+sudo apt install $DEPS -y
 
 echo
 echo Clone git repos:
