@@ -4,7 +4,7 @@ set -e
 TASKS="\
    web-server at   ws://localhost:8080/ | pd-web/serve '0.0.0.0' '8080'
   core-server at http://localhost:9090/ | pd-core3/server -port '9090'
-reverse-proxy at http://localhost:8081/ | nginx -c pd-web/nginx.conf -p pd-web -g 'daemon off;'\
+reverse-proxy at http://localhost:8081/ | nginx -c nginx.conf -p pd-web -g 'daemon off;'\
 "
 
 RUNNING=$(
@@ -20,7 +20,7 @@ fi
 
 cleanup() {
 	echo -n "Shutting down..."
-	kill $pids 2>/dev/null
+	kill $pids 2>/dev/null || true
 	echo OK
 	exit 0
 }
