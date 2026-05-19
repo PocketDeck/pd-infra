@@ -39,6 +39,8 @@ EOF
 echo "Monitoring PIDs: $pids"
 echo "Press Ctrl+C to stop."
 
+set +e
+
 for pid in $pids; do
 	wait "$pid"
 done
