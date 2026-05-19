@@ -5,8 +5,8 @@ DEPS="go nginx python3 gcc make"
 REPOS="pd-core3 pd-web qr-gen"
 TASKS="\
 make -C qr-gen build/release/qr-gen
-go -C pd-core3 build -o ./server ./cmd/server\
-chmod +x pd-web/serve
+go -C pd-core3 build -o ./server ./cmd/server
+chmod +x pd-web/serve\
 "
 
 echo Install dependencies:
