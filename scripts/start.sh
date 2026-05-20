@@ -2,9 +2,9 @@
 set -e
 
 TASKS="\
-   web-server at   ws://localhost:8080/ | pd-web/serve '0.0.0.0' '8080'
-  core-server at http://localhost:9090/ | pd-core3/server -port '9090'
-reverse-proxy at http://localhost:8081/ | nginx -c nginx.conf -p pd-web -g 'daemon off;'\
+   web-server at   ws://localhost:9002/ | /app/web/serve '0.0.0.0' '9002'
+  core-server at http://localhost:9001/ | /app/core -port '9001'
+reverse-proxy at http://localhost/      | nginx -c nginx.conf -p app -g 'daemon off;'\
 "
 
 RUNNING=$(

@@ -3,20 +3,23 @@ FROM alpine:latest as builder
 
 RUN apk add --no-cache \
 		git \
-		go \
-		make
+		build-base \
+		go
 
 WORKDIR /tmp
 
-ARG GIT_HOST
+ARG GIT_HOST="https://github.com/PocketDeck"
 
 # qr-gen
-RUN git clone --depth 1 "$GIT_HOST/qr-gen.git"
-RUN make -C qr-gen
+RUN git clone --depth 1 "${GIT_HOST}/qr-gen.git"
+RUN make -C qr-gen build/release/qr-gen
 
 # pd-core
-RUN git clone --depth 1 "$GIT_HOST/pd-core3.git"
-RUN go build -C pd-core3 cmd/server/main.go
+RUN git clone --depth 1 "${GIT_HOST}/pd-core3.git"
+RUN go build -C pd-core3 ./cmd/server
+
+# pd-web
+RUN git clone --depth 1 "${GIT_HOST}/pd-web.git"
 
 ####### RUNNING ########
 FROM alpine:latest
@@ -29,12 +32,10 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 COPY --from=builder /tmp/qr-gen/build/release/qr-gen qr-gen
-COPY --from=builder /tmp/pd-core3/main core
+COPY --from=builder /tmp/pd-core3/server core
+COPY --from=builder /tmp/pd-web web
 COPY scripts .
-RUN chmod -R +x scripts
-
-COPY nginx.conf /etc/nginx/nginx.conf
-RUN mkdir -p /run/nginx
+COPY nginx.conf .
 
 EXPOSE 80
 
