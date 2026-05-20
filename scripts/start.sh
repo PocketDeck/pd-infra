@@ -4,7 +4,7 @@ set -e
 TASKS="\
    web-server at   ws://localhost:9002/ | /app/web/serve '0.0.0.0' '9002'
   core-server at http://localhost:9001/ | /app/core -port '9001'
-reverse-proxy at http://localhost/      | nginx -c nginx.conf -p /app\
+reverse-proxy at http://localhost/      | nginx -c /app/nginx.conf\
 "
 
 RUNNING=$(
