@@ -1,51 +1,35 @@
 # PocketDeck Infrastructure (`pd-infra`)
 
-`pd-infra` contains the deployment infrastructure for **PocketDeck**, an online platform for playing multiplayer card games.
-This repository provides a **single-container Docker-based deployment** that builds and serves all PocketDeck components behind an Nginx reverse proxy.
+`pd-infra` provides the deployment infrastructure for **PocketDeck**, an online platform for playing multiplayer card games.
 
-All PocketDeck components are included as **Git submodules** and are built directly inside the container during the Docker build process. This repository does **not** perform any machine-level setup; it only provides the build and runtime environment for deployment.
+This repository builds and runs all PocketDeck components inside a **single Docker container** behind an Nginx reverse proxy. The components are pulled from their remote repositories at build time — no submodules are used.
 
 ---
 
-## Included Components (via Submodules)
+## Components
 
-The following PocketDeck repositories are included under `PocketDeck/` as Git submodules:
-
-- **`qr-gen`** — QR code generation service used by the frontend to allow players to easily join rooms via shareable QR codes.
-- **`pd-core`** — Main backend server responsible for game logic, player sessions, and WebSocket communication.
-- **`pd-web`** — Web frontend served through a lightweight Python application.
-
-Submodules ensure that deployment always uses specific, version-tracked revisions of each component.
+| Component  | Source Repository         | Role |
+|------------|---------------------------|------|
+| `qr-gen`   | `qr-gen`                  | QR code generation for room invites (fastcgi) |
+| `pd-core`  | `pd-core3`                | Backend server — game logic, WebSocket, player sessions  |
+| `pd-web`   | `pd-web`                  | Web frontend served via a lightweight Python HTTP server |
 
 ---
 
 ## Features
 
-### **Single-Container Deployment**
-All PocketDeck services run inside one Docker container:
+- **Single-container deployment** — all services run inside one Docker image.
+- **Build-time cloning** — each component is `git clone --depth 1` from its repository during the multi-stage build. No submodule maintenance required.
+- **Nginx reverse proxy** — routes external traffic to the correct internal service.
+- **No environment config needed** — the container runs out of the box on port 80.
 
-- `qr-gen` is built using `make`.
-- `pd-core` is built using CMake.
-- `pd-web` is launched as a Python application.
-- Nginx serves as the reverse proxy and entrypoint for all external traffic.
+### Route Mapping
 
-### **Reverse Proxy Routing**
-Nginx handles routing between all internal services:
-
-| Route         | Internal Service | Purpose |
-|---------------|------------------|---------|
-| `/qr`         | qr-gen           | QR code generation for room invites |
-| `/ws`         | pd-core          | Backend WebSocket/game logic |
-| `/` (default) | pd-web           | Frontend application |
-
-### **Automated Build Process**
-The Dockerfile included in this repository:
-
-- Copies the repository and its submodules into the container
-- Installs required build dependencies (Make, CMake, Python, Nginx, etc.)
-- Builds each component
-- Configures Nginx
-- Starts all services using a unified `start.sh` supervisor script
+| Route       | Upstream      | Purpose |
+|-------------|---------------|---------|
+| `/qr/`      | `qr-gen`      | QR code generation via fastcgi |
+| `/ws/`      | `pd-core`     | WebSocket / game server on `:9001` |
+| `/`         | `pd-web`      | Frontend served on `:9002` |
 
 ---
 
@@ -53,62 +37,46 @@ The Dockerfile included in this repository:
 
 ```
 pd-infra/
-│
-├── PocketDeck/ # Submodule directory
-│   ├── qr-gen/ # Submodule: QR generator
-│   ├── pd-core/ # Submodule: Backend server
-│   └── pd-web/ # Submodule: Frontend
-│
-├── Dockerfile # Builds the entire PocketDeck environment
-├── nginx.conf # Reverse proxy configuration (http include)
-├── start.sh # Launches all services inside the container
-└── README.md # This file
+├── Containerfile          # Multi-stage Docker build
+├── nginx.conf             # Nginx reverse proxy configuration
+├── scripts/
+│   ├── start.sh           # Launches all services inside the container
+│   └── qr-gen-http.sh     # FastCGI script for QR generation
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## Working with Submodules
+## Usage
 
-To clone this repository with all components included:
-
-```bash
-git clone --recurse-submodules https://github.com/PocketDeck/pd-infra.git
-```
-
-If the repository was already cloned without submodules:
+### Build
 
 ```bash
-git submodule update --init --recursive
+docker build -t pocketdeck -f Containerfile .
 ```
 
-To update all submodules to their latest remote commits:
+The build clones `qr-gen`, `pd-core3`, and `pd-web` from GitHub, builds `qr-gen` and `pd-core3`, and copies the web frontend.
 
-```bash
-git submodule update --remote --merge
-```
+### Run
 
----
-
-## Deployment
-
-### **Build the container**
-```bash
-docker build -t pocketdeck .
-```
-
-### **Run the container**
 ```bash
 docker run -p 80:80 pocketdeck
 ```
 
-The PocketDeck system will be accessible on port 80, with all internal routing handled automatically by Nginx.
+PocketDeck is now available at `http://localhost`. The `start.sh` script launches three processes:
 
-No environment variables or additional configuration are required.
+- **pd-web** — Python HTTP server on `:9002`
+- **pd-core** — Game server on `:9001`
+- **nginx** — Reverse proxy on `:80`
+
+Press Ctrl+C to stop all services.
 
 ---
 
 ## Notes
-- This repository is strictly for **deployment**; it does not provide development tools or local environment setup.
-It does not provide development tools, local testing helpers, or environment setup.
-- All PocketDeck components used as submodules are **public GitHub repositories**.
-- Hosting, scaling, SSL termination, and server management are fully up to the operator.
+
+- This repository is for **deployment only** — it does not include development tooling or local setup helpers.
+- All component repositories are **public** on GitHub.
+- The default Git remote can be overridden with `--build-arg GIT_HOST=...`.
+- Hosting, scaling, SSL, and server management are the operator's responsibility.
